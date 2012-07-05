@@ -1,17 +1,14 @@
-The Controller
-==============
+控制器
+======
 
-Still with us after the first two parts? You are already becoming a Symfony2
-addict! Without further ado, let's discover what controllers can do for you.
+阅读到这里，说明你已经对Symfony2有好感了。接下来，进一步了解Symfony2的控制器（controller）。
 
-Using Formats
--------------
+返回格式
+--------
 
-Nowadays, a web application should be able to deliver more than just HTML
-pages. From XML for RSS feeds or Web Services, to JSON for Ajax requests,
-there are plenty of different formats to choose from. Supporting those formats
-in Symfony2 is straightforward. Tweak the route by adding a default value of
-``xml`` for the ``_format`` variable::
+现在的Web应用已经不仅限于输出HTML页面了：还有用于RSS订阅和Web服务的XML，Ajax请求的JSON，等等。支持这些格式的输出，在Symfony2里很容易。你只需要在路由配置里为\ ``_format``\ 设置默认值，如\ ``xml``\ ：
+
+.. code-block:: php
 
     // src/Acme/DemoBundle/Controller/DemoController.php
     use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
@@ -26,8 +23,7 @@ in Symfony2 is straightforward. Tweak the route by adding a default value of
         return array('name' => $name);
     }
 
-By using the request format (as defined by the ``_format`` value), Symfony2
-automatically selects the right template, here ``hello.xml.twig``:
+通过指定返回格式（即\ ``_format``\ ），Symfony2可以自动选择正确的模板，按照上面的例子，\ ``hello.xml.twig``\ 将被加载：
 
 .. code-block:: xml+php
 
@@ -36,10 +32,9 @@ automatically selects the right template, here ``hello.xml.twig``:
         <name>{{ name }}</name>
     </hello>
 
-That's all there is to it. For standard formats, Symfony2 will also
-automatically choose the best ``Content-Type`` header for the response. If
-you want to support different formats for a single action, use the ``{_format}``
-placeholder in the route pattern instead::
+就这么简单。对于标准的格式（即HTTP、XML、JSON等等），Symfony2会自动为其输出相应的\ ``Content-Type``\ 头信息（浏览器依赖这个信息来识别文本内容的格式）。如果你想要在一个动作方法（action）里支持不同的格式，可以将\ ``_format``\ 作为占位符来添加：
+
+.. code-block:: php
 
     // src/Acme/DemoBundle/Controller/DemoController.php
     use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
@@ -54,52 +49,47 @@ placeholder in the route pattern instead::
         return array('name' => $name);
     }
 
-The controller will now be called for URLs like ``/demo/hello/Fabien.xml`` or
-``/demo/hello/Fabien.json``.
+``/demo/hello/Fabien.xml``\ 或\ ``/demo/hello/Fabien.json``\ 这样的URL可以使控制器分别返回不同的格式。
 
-The ``requirements`` entry defines regular expressions that placeholders must
-match. In this example, if you try to request the ``/demo/hello/Fabien.js``
-resource, you will get a 404 HTTP error, as it does not match the ``_format``
-requirement.
+``requirements``\ 属性定义的是占位符对应变量必须符合的正则表达式。在例子里，如果你请求的是\ ``/demo/hello/Fabien.js``\ ，那么Symfony2框架将会报404错误，因为“js”并不符合\ ``_format``\ 的规则。
 
-Redirecting and Forwarding
---------------------------
+跳转与重定向
+------------
 
-If you want to redirect the user to another page, use the ``redirect()``
-method::
+如果你要做一个HTTP跳转，可以使用 ``redirect()`` 方法：
+
+.. code-block:: php
 
     return $this->redirect($this->generateUrl('_demo_hello', array('name' => 'Lucas')));
 
-The ``generateUrl()`` is the same method as the ``path()`` function we used in
-templates. It takes the route name and an array of parameters as arguments and
-returns the associated friendly URL.
+``generateUrl()``\ 与Twig模板里的\ ``path()``\ 函数是同一个。基于路由的名称以及一组路由规则里的参数值，该函数可以输出完整、美观的URL。
 
-You can also easily forward the action to another one with the ``forward()``
-method. Internally, Symfony makes a "sub-request", and returns the ``Response``
-object from that sub-request::
+你还可以通过调用\ ``forward()``\ 方法来做重定向，Symfony框架将创建一个“子请求”，并获得这个子请求所返回的 ``Response`` 对象：
+
+.. code-block:: php
 
     $response = $this->forward('AcmeDemoBundle:Hello:fancy', array('name' => $name, 'color' => 'green'));
 
     // do something with the response or return it directly
 
-Getting information from the Request
-------------------------------------
+获取与请求相关的信息
+--------------------
 
-Besides the values of the routing placeholders, the controller also has access
-to the ``Request`` object::
+除了路由占位符对应的变量，控制器还可以访问\ ``Reqeust``\ 对象：
+
+.. code-block:: php
 
     $request = $this->getRequest();
 
-    $request->isXmlHttpRequest(); // is it an Ajax request?
+    $request->isXmlHttpRequest(); // 是否是Ajax请求？
 
     $request->getPreferredLanguage(array('en', 'fr'));
 
-    $request->query->get('page'); // get a $_GET parameter
+    $request->query->get('page'); // 获取一个 $_GET 参数
 
-    $request->request->get('page'); // get a $_POST parameter
+    $request->request->get('page'); // 获取一个 $_POST 参数
 
-In a template, you can also access the ``Request`` object via the
-``app.request`` variable:
+在Twig模板里，你也可以通过\ ``app.request``\ 变量来访问\ ``Request``\ 对象：
 
 .. code-block:: html+jinja
 
@@ -107,45 +97,42 @@ In a template, you can also access the ``Request`` object via the
 
     {{ app.request.parameter('page') }}
 
-Persisting Data in the Session
-------------------------------
+在Session里保存变量
+-------------------
 
-Even if the HTTP protocol is stateless, Symfony2 provides a nice session object
-that represents the client (be it a real person using a browser, a bot, or a
-web service). Between two requests, Symfony2 stores the attributes in a cookie
-by using native PHP sessions.
+虽然HTTP协议是无状态的，Symfony2依然提供了一个用来代表“客户端”（可以是一个使用浏览器的访问者，也可以是搜索引擎爬虫程序或Web服务）的Session对象。在请求之间，Symfony2通过在cookie里设置标识来维持一些与访问相关的变量值。
 
-Storing and retrieving information from the session can be easily achieved
-from any controller::
+在控制器里，可以很简单地读/写Session变量：
+
+.. code-block:: php
 
     $session = $this->getRequest()->getSession();
 
-    // store an attribute for reuse during a later user request
+    // 在Session里保存一个变量，可以在其他请求里读取
     $session->set('foo', 'bar');
 
-    // in another controller for another request
+    // 在另一个请求里
     $foo = $session->get('foo');
 
-    // set the user locale
+    // 设置用户的本地化选项
     $session->setLocale('fr');
 
-You can also store small messages that will only be available for the very
-next request::
+你也可以设置一个只在下一次请求里可见的“消息”：
 
-    // store a message for the very next request (in a controller)
+.. code-block:: php
+
+    // 为下一个请求设置一个消息（控制器里）
     $session->setFlash('notice', 'Congratulations, your action succeeded!');
 
-    // display the message back in the next request (in a template)
+    // 在模板里显示这个消息
     {{ app.session.flash('notice') }}
 
-This is useful when you need to set a success message before redirecting
-the user to another page (which will then show the message).
+这个功能可以用来设置需要在下一个页面显示的信息（比如提示操作成功）。
 
-Securing Resources
-------------------
+安全机制
+--------
 
-The Symfony Standard Edition comes with a simple security configuration that
-fits most common needs:
+Symfony2标准版包含了能满足常规需要的安全设置：
 
 .. code-block:: yaml
 
@@ -182,23 +169,18 @@ fits most common needs:
                     path:   /demo/secured/logout
                     target: /demo/
 
-This configuration requires users to log in for any URL starting with
-``/demo/secured/`` and defines two valid users: ``user`` and ``admin``.
-Moreover, the ``admin`` user has a ``ROLE_ADMIN`` role, which includes the
-``ROLE_USER`` role as well (see the ``role_hierarchy`` setting).
+
+这个配置使得用户需要先登录，才能访问以\ ``/demo/secured/``\ 开头的URL。配置里还定义了两个用户：\ ``user``\ 和\ ``admin``\ 。\ ``admin``\ 用户有一个\ ``ROLE_ADMIN``\ 的身份，这个身份包含了\ ``ROLE_USER``\ （即角色层次结构/\ ``role_hierarchy``\ ）。
 
 .. tip::
 
-    For readability, passwords are stored in clear text in this simple
-    configuration, but you can use any hashing algorithm by tweaking the
-    ``encoders`` section.
+    为了方便阅读，例子里的密码都是明文的，但你在实际代码里应该运用hash算法来增强安全性。
 
-Going to the ``http://localhost/Symfony/web/app_dev.php/demo/secured/hello``
-URL will automatically redirect you to the login form because this resource is
-protected by a ``firewall``.
+由于有“防火墙”（\ ``firewall``\ ）的保护，访问\ ``http://localhost/Symfony/web/app_dev.php/demo/secured/hello``\ 会自跳转到登录页面。
 
-You can also force the action to require a given role by using the ``@Secure``
-annotation on the controller::
+你还可以通过\ ``@Secure``\ 注解为控制器的某个动作增加用户必须具有指定角色的限制：
+
+.. code-block:: php
 
     use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
     use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
@@ -214,26 +196,18 @@ annotation on the controller::
         return array('name' => $name);
     }
 
-Now, log in as ``user`` (who does *not* have the ``ROLE_ADMIN`` role) and
-from the secured hello page, click on the "Hello resource secured" link.
-Symfony2 should return a 403 HTTP status code, indicating that the user
-is "forbidden" from accessing that resource.
+如是，以\ ``user``\ （不具备\ ``ROLE_ADMIN``\ 角色）访问被保护的“hello”页面，然后点击“Hello resource secured”链接，这时的Symfony2框架将返回一个HTTP状态码403，即不允许当前用户访问。
 
 .. note::
 
-    The Symfony2 security layer is very flexible and comes with many different
-    user providers (like one for the Doctrine ORM) and authentication providers
-    (like HTTP basic, HTTP digest, or X509 certificates). Read the
-    ":doc:`/book/security`" chapter of the book for more information
-    on how to use and configure them.
+    Symfony2的安全组件可扩展性很好，也包含了很多不同的用户整合方式（如Doctrine ORM）和验证方式（如HTTP Basic、HTTP Digest或X509证书等等）。你可以阅读《\ :doc:`/book/security`\ 》来了解如何配置和使用这些功能
 
-Caching Resources
------------------
+缓存
+----
 
-As soon as your website starts to generate more traffic, you will want to
-avoid generating the same resource again and again. Symfony2 uses HTTP cache
-headers to manage resources cache. For simple caching strategies, use the
-convenient ``@Cache()`` annotation::
+当你的网站流量越来越高，就应该避免反复地生成相同的内容。Symfony2可以使用HTTP缓存头信息来管理页面缓存。最简单的用法是使用\ ``@Cache()``\ 注解：
+
+.. code-block:: php
 
     use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
     use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
@@ -249,25 +223,15 @@ convenient ``@Cache()`` annotation::
         return array('name' => $name);
     }
 
-In this example, the resource will be cached for a day. But you can also use
-validation instead of expiration or a combination of both if that fits your
-needs better.
+例子里，\ ``helloAction``\ 方法返回的HTML页面将提示浏览器可以将其缓存一天。你也可以使用验证，或者配合使用验证和过期时间来进行更细粒度的控制。
 
-Resource caching is managed by the Symfony2 built-in reverse proxy. But because 
-caching is managed using regular HTTP cache headers, you can replace the 
-built-in reverse proxy with Varnish or Squid and easily scale your application.
+Symfony2以内置代理的方式来实现HTTP缓存的管理，所以你可以非常容易地替换成更有效的Varnish或者Squid，使你的网站获得更高的性能。
 
 .. note::
 
-    But what if you cannot cache whole pages? Symfony2 still has the solution
-    via Edge Side Includes (ESI), which are supported natively. Learn more by
-    reading the ":doc:`/book/http_cache`" chapter of the book.
+    如果页面不能被整体缓存怎么办（即各部分内容的刷新时间不一致）？Symfony2通过支持Edge Side Includes（ESI）来解决这个问题，你可以阅读《\ :doc:`/book/http_cache`\ 》来了解细节。
 
-Final Thoughts
---------------
+总结
+----
 
-That's all there is to it, and I'm not even sure we have spent the full
-10 minutes. We briefly introduced bundles in the first part, and all the
-features we've learned about so far are part of the core framework bundle.
-But thanks to bundles, everything in Symfony2 can be extended or replaced.
-That's the topic of the :doc:`next part of this tutorial<the_architecture>`.
+到目前为止，我们了解的都是核心的框架代码包（framework bundle），正因为代码包的机制，你可以自由地扩展甚至替换代码，获得你想要的功能：《\ :doc:`the_architecture`\ 》

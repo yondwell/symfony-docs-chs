@@ -1,43 +1,33 @@
-The View
-========
+视图
+====
 
-After reading the first part of this tutorial, you have decided that Symfony2
-was worth another 10 minutes. Great choice! In this second part, you will
-learn more about the Symfony2 template engine, `Twig`_. Twig is a flexible,
-fast, and secure template engine for PHP. It makes your templates more
-readable and concise; it also makes them more friendly for web designers.
+看来你在阅读完《快速入门》的第一章之后，决定再多花10分钟继续判断Symfony2是否适合你的需要。有眼光！本篇介绍的是Symfony2默认使用的模板引擎——“\ `Twig`_\ ”。Twig是一款功能强大、高性能、并且安全的PHP模板引擎。用Twig书写的模板可读性更好，代码更简洁，自然也更受页面制作人员的欢迎。
 
 .. note::
 
-    Instead of Twig, you can also use :doc:`PHP </cookbook/templating/PHP>`
-    for your templates. Both template engines are supported by Symfony2.
+    你也可以在Symfony2里使用纯\ :doc:`PHP </cookbook/templating/PHP>`\ 的模板。
 
-Getting familiar with Twig
---------------------------
+了解Twig
+--------
 
 .. tip::
 
-    If you want to learn Twig, we highly recommend you to read its official
-    `documentation`_. This section is just a quick overview of the main
-    concepts.
+    如果你想学习Twig，我们强烈建议你阅读《\ `Twig官方文档`_\ 》，本文只是一些重要概念的介绍。
 
-A Twig template is a text file that can generate any type of content (HTML,
-XML, CSV, LaTeX, ...). Twig defines two kinds of delimiters:
+Twig模板可以用来生成任意类型的文本内容，如：（HTML，XML，CSV，LaTex，等等），Twig里定义了两种分隔符：
 
-* ``{{ ... }}``: Prints a variable or the result of an expression;
+* ``{{ ... }}``\：输出变量或者表达式结果；
 
-* ``{% ... %}``: Controls the logic of the template; it is used to execute
-  ``for`` loops and ``if`` statements, for example.
+* ``{% ... %}``\：界定条件语句，如\ ``for``\ 循环和\ ``if``\ 语句。
 
-Below is a minimal template that illustrates a few basics, using two variables
-``page_title`` and ``navigation``, which would be passed into the template:
+下面是一个简单的例子，用到了两个变量：\ ``page_title``\ 和\ ``navigation``\ 。
 
 .. code-block:: html+jinja
 
     <!DOCTYPE html>
     <html>
         <head>
-            <title>My Webpage</title>
+            <title>网页标题</title>
         </head>
         <body>
             <h1>{{ page_title }}</h1>
@@ -53,18 +43,17 @@ Below is a minimal template that illustrates a few basics, using two variables
 
 .. tip::
 
-   Comments can be included inside templates using the ``{# ... #}`` delimiter.
+   Twig模板里的注释可以写在\ ``{# ... #}``\ 内。
 
-To render a template in Symfony, use the ``render`` method from within a controller
-and pass it any variables needed in the template::
+在Symfony2里，可以通过调用Controller类的\ ``render``\ 方法，传入模板文件名和模板里用到的变量来输出最终的HTML，如：
+
+.. code-block:: php
 
     $this->render('AcmeDemoBundle:Demo:hello.html.twig', array(
         'name' => $name,
     ));
 
-Variables passed to a template can be strings, arrays, or even objects. Twig
-abstracts the difference between them and lets you access "attributes" of a
-variable with the dot (``.``) notation:
+赋值给模板的变量可以是字符串、数组甚至对象。Twig会自动地识别变量类型，你可以通过“\ ``.``\ ”符号来访问复合变量里的属性值，如：
 
 .. code-block:: jinja
 
@@ -90,22 +79,14 @@ variable with the dot (``.``) notation:
 
 .. note::
 
-    It's important to know that the curly braces are not part of the variable
-    but the print statement. If you access variables inside tags don't put the
-    braces around.
+    需要注意的是，花括号仅仅用于需要输出的场合。
 
-Decorating Templates
---------------------
+嵌套模板
+--------
 
-More often than not, templates in a project share common elements, like the
-well-known header and footer. In Symfony2, we like to think about this problem
-differently: a template can be decorated by another one. This works exactly
-the same as PHP classes: template inheritance allows you to build a base
-"layout" template that contains all the common elements of your site and
-defines "blocks" that child templates can override.
+有经验的开发者知道，模板是可以复用的，比如页首、页尾等等。Symfony2框架支持模板的嵌套，这和PHP类的继承十分类似。有了这个机制，你就可以创建包含公共元素的“布局”模板，并定义由子模板继承的“区块”。
 
-The ``hello.html.twig`` template inherits from ``layout.html.twig``, thanks to
-the ``extends`` tag:
+下面的\ ``hello.html.twig``\ 模板就通过\ ``extends``\ 语法继承了\ ``layout.html.twig``\ 模板：
 
 .. code-block:: html+jinja
 
@@ -118,12 +99,9 @@ the ``extends`` tag:
         <h1>Hello {{ name }}!</h1>
     {% endblock %}
 
-The ``AcmeDemoBundle::layout.html.twig`` notation sounds familiar, doesn't it?
-It is the same notation used to reference a regular template. The ``::`` part
-simply means that the controller element is empty, so the corresponding file
-is directly stored under the ``Resources/views/`` directory.
+``AcmeDemoBundle::layout.html.twig``\ 好像在哪里见到过，是么？这是一个标准的模板代称。其中，\ ``::``\ 表示模板文件并没有指定具体的Controller，而是位于\ ``/app/Resources/views/``\ 目录。
 
-Now, let's have a look at a simplified ``layout.html.twig``:
+让我们先看一个简化版的\ ``layout.html.twig``\ ：
 
 .. code-block:: jinja
 
@@ -133,35 +111,28 @@ Now, let's have a look at a simplified ``layout.html.twig``:
         {% endblock %}
     </div>
 
-The ``{% block %}`` tags define blocks that child templates can fill in. All
-the block tag does is to tell the template engine that a child template may
-override those portions of the template.
+``{% block %}``\ 标签定义了可以载入子模板的区域。
 
-In this example, the ``hello.html.twig`` template overrides the ``content``
-block, meaning that the "Hello Fabien" text is rendered inside the ``div.symfony-content``
-element.
+在例子里，\ ``hello.html.twig``\ 模板重载了\ ``content``\ 区块，意味着文本：“Hello Fabien”将被输出到\ ``div.symfony-content``\ 内。
 
-Using Tags, Filters, and Functions
-----------------------------------
+使用标签、过滤和函数
+--------------------
 
-One of the best feature of Twig is its extensibility via tags, filters, and
-functions. Symfony2 comes bundled with many of these built-in to ease the
-work of the template designer.
+Twig最突出的特性之一就是可以通过标签、过滤和函数来进行功能扩展。Symfony2内置了很多相关的插件，可以极大简化模板编写的工作。
 
-Including other Templates
-~~~~~~~~~~~~~~~~~~~~~~~~~
+模板的包含
+~~~~~~~~~~
 
-The best way to share a snippet of code between several distinct templates is
-to create a new template that can then be included from other templates.
+在不同模板之间共享一段相同代码的最佳方式，就是创建一个可以被其他模板包含的共用模板。
 
-Create an ``embedded.html.twig`` template:
+比如，创建一个\ ``embedded.html.twig``\ 模板：
 
 .. code-block:: jinja
 
     {# src/Acme/DemoBundle/Resources/views/Demo/embedded.html.twig #}
     Hello {{ name }}
 
-And change the ``index.html.twig`` template to include it:
+然后修改\ ``index.html.twig``\ 来包含这个模板：
 
 .. code-block:: jinja
 
@@ -173,28 +144,24 @@ And change the ``index.html.twig`` template to include it:
         {% include "AcmeDemoBundle:Demo:embedded.html.twig" %}
     {% endblock %}
 
-Embedding other Controllers
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+包含控制器的输出
+~~~~~~~~~~~~~~~~
 
-And what if you want to embed the result of another controller in a template?
-That's very useful when working with Ajax, or when the embedded template needs
-some variable not available in the main template.
+那么如何在模板里嵌入另外的控制器（controller）的输出？在开发Ajax应用，或者被包含的模板引用了主模板里并不存在的变量时，这个特性就会变得十分有用。
 
-Suppose you've created a ``fancy`` action, and you want to include it inside
-the ``index`` template. To do this, use the ``render`` tag:
+假设你已经创建了一个\ ``fancy``\ 动作方法（action），打算将其输出包含在\ ``index``\ 模板里，可以通过使用\ ``render``\ 标签来实现：
 
 .. code-block:: jinja
 
     {# src/Acme/DemoBundle/Resources/views/Demo/index.html.twig #}
     {% render "AcmeDemoBundle:Demo:fancy" with { 'name': name, 'color': 'green' } %}
 
-Here, the ``AcmeDemoBundle:Demo:fancy`` string refers to the ``fancy`` action
-of the ``Demo`` controller. The arguments (``name`` and ``color``) act like
-simulated request variables (as if the ``fancyAction`` were handling a whole
-new request) and are made available to the controller::
+``AcmeDemoBundle:Demo:fancy``\ 字符串指代的是\ ``Demo``\ 控制器的\ ``fancy``\ 动作方法。\ ``name``\ 和\ ``color``\ 此时就代替了请求参数，用来执行对\ ``fancyAction``\ 的调用。
+
+.. code-block:: php
 
     // src/Acme/DemoBundle/Controller/DemoController.php
-
+    
     class DemoController extends Controller
     {
         public function fancyAction($name, $color)
@@ -202,28 +169,27 @@ new request) and are made available to the controller::
             // create some object, based on the $color variable
             $object = ...;
 
-            return $this->render('AcmeDemoBundle:Demo:fancy.html.twig', array('name' => $name, 'object' => $object));
+            return $this->render('AcmeDemoBundle:Demo:fancy.html.twig', array(
+                'name' => $name,
+                'object' => $object
+            ));
         }
-
+        
         // ...
     }
 
-Creating Links between Pages
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+创建链接
+~~~~~~~~
 
-Speaking of web applications, creating links between pages is a must. Instead
-of hardcoding URLs in templates, the ``path`` function knows how to generate
-URLs based on the routing configuration. That way, all your URLs can be easily
-updated by just changing the configuration:
+对于Web应用，总是会用到链接。把URL静态的写在模板里十分不灵活，因为任何的变化都可能需要你费时去查找大量的文件；而\ ``path``\ 函数可以根据路由配置的调整，始终输出有效的URL：
 
 .. code-block:: html+jinja
 
     <a href="{{ path('_demo_hello', { 'name': 'Thomas' }) }}">Greet Thomas!</a>
 
-The ``path`` function takes the route name and an array of parameters as
-arguments. The route name is the main key under which routes are referenced
-and the parameters are the values of the placeholders defined in the route
-pattern::
+``path``\ 函数以路由名称和一组取值作为参数，取值对应的是路由规则里的占位符（可变量）：
+
+.. code-block:: php
 
     // src/Acme/DemoBundle/Controller/DemoController.php
     use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
@@ -240,14 +206,12 @@ pattern::
 
 .. tip::
 
-    The ``url`` function generates *absolute* URLs: ``{{ url('_demo_hello', {
-    'name': 'Thomas' }) }}``.
+    ``url``\ 函数可以用来生成\ *绝对* 路径的URL：\ ``{{ url('_demo_hello', { 'name': 'Thomas' }) }}``\ 。
 
-Including Assets: images, JavaScripts, and stylesheets
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+引用外部文件：图片，JavaScript和样式表
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-What would the Internet be without images, JavaScripts, and stylesheets?
-Symfony2 provides the ``asset`` function to deal with them easily:
+互联网怎么能少得了图片，JavaScripts和样式表？Symfony2提供了\ ``asset``\ 函数来简化对这些资源的引用：
 
 .. code-block:: jinja
 
@@ -255,34 +219,21 @@ Symfony2 provides the ``asset`` function to deal with them easily:
 
     <img src="{{ asset('images/logo.png') }}" />
 
-The ``asset`` function's main purpose is to make your application more portable.
-Thanks to this function, you can move the application root directory anywhere
-under your web root directory without changing anything in your template's
-code.
+``asset``\ 函数的主要目标，是为了使你的应用拥有更好的可移植性。有了这个函数，你可以任意地改变资源文件相对于Web根目录的位置，而不用去修改模板。
 
-Escaping Variables
-------------------
+转义变量
+--------
 
-Twig is configured to automatically escapes all output by default. Read Twig
-`documentation`_ to learn more about output escaping and the Escaper
-extension.
+Twig默认对所有输出进行转义，你可以阅读《\ `Twig官方文档`_\ 》来了解转义，以及Twig提供了那些与转义有关的功能。
 
-Final Thoughts
---------------
+结论
+----
 
-Twig is simple yet powerful. Thanks to layouts, blocks, templates and action
-inclusions, it is very easy to organize your templates in a logical and
-extensible way. However, if you're not comfortable with Twig, you can always
-use PHP templates inside Symfony without any issues.
+Twig很简单，但功能很强大。通过综合运用布局、区块、模板和对动作方法（controller action）的包含，前端开发会变得更轻松。当然，如果你不想使用Twig，你也可以使用纯PHP的模板。
 
-You have only been working with Symfony2 for about 20 minutes, but you can
-already do pretty amazing stuff with it. That's the power of Symfony2. Learning
-the basics is easy, and you will soon learn that this simplicity is hidden
-under a very flexible architecture.
+至此，虽然你只花了20分钟来了解Symfony2，但你已经可以用它做到一些让人印象深刻的事了。使Symfony2的这些特性成为现实的，是一整套复杂的架构……
 
-But I'm getting ahead of myself. First, you need to learn more about the controller
-and that's exactly the topic of the :doc:`next part of this tutorial<the_controller>`.
-Ready for another 10 minutes with Symfony2?
+我不应该用“复杂的架构”来吓唬你。按部就班地，你可以在下一篇中先了解\ :doc:`控制器<the_controller>`\ 。
 
-.. _Twig:          http://twig.sensiolabs.org/
-.. _documentation: http://twig.sensiolabs.org/documentation
+.. _Twig:         http://twig.sensiolabs.org/
+.. _Twig官方文档: http://twig.sensiolabs.org/documentation

@@ -1,65 +1,43 @@
 .. index::
    single: Tests
 
-Performance
-===========
+性能优化
+========
 
-Symfony2 is fast, right out of the box. Of course, if you really need speed,
-there are many ways that you can make Symfony even faster. In this chapter,
-you'll explore many of the most common and powerful ways to make your Symfony
-application even faster.
+得益于优良的架构设计，以及对缓存机制的充分运用，默认配置下的Symfony2就已经能提供足够好的性能，但如果仍想要进一步提升性能，则可以参考本文介绍的几个优化方法。
 
 .. index::
    single: Performance; Byte code cache
 
-Use a Byte Code Cache (e.g. APC)
---------------------------------
+安装中间代码缓存组件
+--------------------
 
-One the best (and easiest) things that you should do to improve your performance
-is to use a "byte code cache". The idea of a byte code cache is to remove
-the need to constantly recompile the PHP source code. There are a number of
-`byte code caches`_ available, some of which are open source. The most widely
-used byte code cache is probably `APC`_
+中间代码（intermediate code 或 opcode）缓存组件，被开发人员亲切地称作“加速器”，其安装与使用对PHP执行效率的提升效果最明显，实施起来也较容易。\ `加速器`_\ 中，又以\ `APC`_\ 的使用最为广泛，其共同的工作原理是，在处理PHP请求时，将中间代码缓存起来，从而可以省去解释器反复编译相同代码的开销。
 
-Using a byte code cache really has no downside, and Symfony2 has been architected
-to perform really well in this type of environment.
+Symfony2针对安装了加速器的运行环境做了专门的设计和优化，有着出色的性能表现。
 
-Further Optimizations
-~~~~~~~~~~~~~~~~~~~~~
+更进一步
+~~~~~~~~
 
-Byte code caches usually monitor the source files for changes. This ensures
-that if the source of a file changes, the byte code is recompiled automatically.
-This is really convenient, but obviously adds overhead.
+通常情况下，加速器组件会扫描PHP源文件的变动，从而保证中间代码的缓存能够自动更新。在开发、调试过程中，这是一项十分有用的功能，但如果你的代码较为稳定（比如是在生产环境中运行），对文件变动的检查也就成了不必要的开销。
 
-For this reason, some byte code caches offer an option to disable these checks.
-Obviously, when disabling these checks, it will be up to the server admin
-to ensure that the cache is cleared whenever any source files change. Otherwise,
-the updates you've made won't be seen.
+所以，有些加速器组件提供了关闭文件变动检查的选项。如果关闭自动检查，源代码的变动将不会自动生效，需要由系统管理员重启PHP服务来清空并重建缓存。
 
-For example, to disable these checks in APC, simply add ``apc.stat=0`` to
-your php.ini configuration.
+以APC为例，在php.ini里关闭自动检查的配置是：\ ``apc.stat=0``\ 。
 
 .. index::
    single: Performance; Autoloader
 
-Use an Autoloader that caches (e.g. ``ApcUniversalClassLoader``)
-----------------------------------------------------------------
+使用带缓存的类自动加载器
+------------------------
 
-By default, the Symfony2 standard edition uses the ``UniversalClassLoader``
-in the `autoloader.php`_ file. This autoloader is easy to use, as it will
-automatically find any new classes that you've placed in the registered
-directories.
+Symfony2在\ `autoloader.php`_\ （位于/app文件夹内）里默认使用\ ``UniversalClassLoader``\ 作为类加载器。这个加载器很方便，因为它被设计成可以在代码目录里发现和自动加载新添的类文件。
 
-Unfortunately, this comes at a cost, as the loader iterates over all configured
-namespaces to find a particular file, making ``file_exists`` calls until it
-finally finds the file it's looking for.
+但是，这个便利性会牺牲一定的性能，因为\ ``UniversalClassLoader``\ 必须遍历所有配置了类自动加载的命名空间所对应的文件目录，并调用\ ``file_exists``\ 方法根据类名来确认PHP源文件是否存在。
 
-The simplest solution is to cache the location of each class after it's located
-the first time. Symfony comes with a class - ``ApcUniversalClassLoader`` -
-loader that extends the ``UniversalClassLoader`` and stores the class locations
-in APC.
+如果可以把类所在的PHP源文件的路径缓存起来，就可以提高框架的运行效率。Symfony2提供了一个\ ``UniversalClassLoader``\ 的扩展类\ ``ApcUniversalClassLoader``\ ，其使用APC来缓存类文件的路径。
 
-To use this class loader, simply adapt your ``autoloader.php`` as follows:
+要使用这个加载器，只需要对\ ``autoloader.php``\ 文件做如下修改：
 
 .. code-block:: php
 
@@ -73,54 +51,36 @@ To use this class loader, simply adapt your ``autoloader.php`` as follows:
 
 .. note::
 
-    When using the APC autoloader, if you add new classes, they will be found
-    automatically and everything will work the same as before (i.e. no
-    reason to "clear" the cache). However, if you change the location of a
-    particular namespace or prefix, you'll need to flush your APC cache. Otherwise,
-    the autoloader will still be looking at the old location for all classes
-    inside that namespace.
+    如果使用\ ``ApcUniversalClassLoader``\ ，Symfony2框架依然可以自动发现并实现对新增PHP类的自动加载。但是，如果你改变了某个命名空间下源文件的路径，或者修改了命名空间的前缀，你就必须手动清空APC缓存，否则，类加载器仍然会去旧的文件位置查找代码。
 
 .. index::
    single: Performance; Bootstrap files
 
-Use Bootstrap Files
--------------------
+使用预初始化文件
+----------------
 
-To ensure optimal flexibility and code reuse, Symfony2 applications leverage
-a variety of classes and 3rd party components. But loading all of these classes
-from separate files on each request can result in some overhead. To reduce
-this overhead, the Symfony2 Standard Edition provides a script to generate
-a so-called `bootstrap file`_, consisting of multiple classes definitions
-in a single file. By including this file (which contains a copy of many of
-the core classes), Symfony no longer needs to include any of the source files
-containing those classes. This will reduce disc IO quite a bit.
+为了达到最大程度的灵活性和复用性，Symfony2引用了大量的第三方代码，如果在每次处理PHP请求时都要重新加载这些文件会带来一定的开销。针对这个问题，Symfony2的标准版本（Standard Edition）提供了用于生成预初始化文件（\ `bootstrap file`_\ ）的脚本，可以将分散在多个源文件里的类，合并到这个单一的PHP源文件里。通过调用这个预初始化文件，Symfony2框架就不再需要逐个去加载包含各个类的源文件，从而减少对磁盘IO的使用。
 
-If you're using the Symfony2 Standard Edition, then you're probably already
-using the bootstrap file. To be sure, open your front controller (usually
-``app.php``) and check to make sure that the following line exists::
+如果你使用的是标准版本的Symfony2，那可能你应该已经在享受预初始化文件（bootstrap文件）带来的好处了。如何进行确认？你只需要打开你的入口控制器文件（一般情况下是\ ``app.php``\ ），确认包含以下代码就可以了：
+
+.. code-block:: php
 
     require_once __DIR__.'/../app/bootstrap.php.cache';
 
-Note that there are two disadvantages when using a bootstrap file:
+需要注意的是，使用预初始化文件会导致以下两个问题：
 
-* the file needs to be regenerated whenever any of the original sources change
-  (i.e. when you update the Symfony2 source or vendor libraries);
+* 在源代码发生改变时，预初始化文件必须要重新生成；
 
-* when debugging, one will need to place break points inside the bootstrap file.
+* 在调试代码时，开发人员需要在预初始化文件里加断点，因为它才是实际被加载的文件。
 
-If you're using Symfony2 Standard Edition, the bootstrap file is automatically
-rebuilt after updating the vendor libraries via the ``php bin/vendors install``
-command.
+如果你使用Symfony2的标准版本，预初始化文件会在使用\ ``php bin/vendors install``\ 脚本命令来安装或者更新第三方组件时，自动重新生成。
 
-Bootstrap Files and Byte Code Caches
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+预初始化文件与中间代码缓存组件
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Even when using a byte code cache, performance will improve when using a bootstrap
-file since there will be less files to monitor for changes. Of course if this
-feature is disabled in the byte code cache (e.g. ``apc.stat=0`` in APC), there
-is no longer a reason to use a bootstrap file.
+在安装了加速器组件的基础上，使用预初始化文件也依然会使框架有更好的性能表现，因为需要由加速器监测代码变动的文件的数量减少了。当然，如果你关闭了对文件变动的监测（如APC的\ ``apc.stat=0``\ ），预初始化文件也就没有必要了。
 
-.. _`byte code caches`: http://en.wikipedia.org/wiki/List_of_PHP_accelerators
+.. _`加速器`: http://en.wikipedia.org/wiki/List_of_PHP_accelerators
 .. _`APC`: http://php.net/manual/en/book.apc.php
 .. _`autoloader.php`: https://github.com/symfony/symfony-standard/blob/master/app/autoload.php
 .. _`bootstrap file`: https://github.com/sensio/SensioDistributionBundle/blob/2.0/Resources/bin/build_bootstrap.php

@@ -1,10 +1,10 @@
-Symfony2 Documentation
-======================
+Symfony2中文文档
+================
 
-Quick Tour
-----------
+快速入门
+--------
 
-Get started fast with the Symfony2 :doc:`Quick Tour <quick_tour/index>`:
+通过了解基础概念，:doc:`快速了解Symfony2 <quick_tour/index>`\ ：
 
 .. toctree::
     :hidden:
@@ -16,10 +16,10 @@ Get started fast with the Symfony2 :doc:`Quick Tour <quick_tour/index>`:
 * :doc:`quick_tour/the_controller` >
 * :doc:`quick_tour/the_architecture`
 
-Book
+教程
 ----
 
-Dive into Symfony2 with the topical guides:
+阅读技术专题：
 
 .. toctree::
     :hidden:
@@ -28,8 +28,8 @@ Dive into Symfony2 with the topical guides:
 
 .. include:: /book/map.rst.inc
 
-Cookbook
---------
+手册
+----
 
 .. toctree::
     :hidden:
@@ -38,8 +38,8 @@ Cookbook
 
 Read the :doc:`Cookbook </cookbook/index>`.
 
-Components
-----------
+组件
+----
 
 .. toctree::
     :hidden:
@@ -48,8 +48,8 @@ Components
 
 Read the :doc:`Components </components/index>` documentation.
 
-Reference Documents
--------------------
+参考
+----
 
 Get answers quickly with reference documents:
 
@@ -60,8 +60,8 @@ Get answers quickly with reference documents:
 
 .. include:: /reference/map.rst.inc
 
-Bundles
--------
+代码包
+------
 
 The Symfony Standard Edition comes with some bundles. Learn more about them:
 
@@ -72,8 +72,8 @@ The Symfony Standard Edition comes with some bundles. Learn more about them:
 
 .. include:: /bundles/map.rst.inc
 
-Contributing
-------------
+参与
+----
 
 Contribute to Symfony2:
 

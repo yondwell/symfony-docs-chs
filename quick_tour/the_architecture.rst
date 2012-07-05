@@ -1,30 +1,24 @@
-The Architecture
-================
+架构
+====
 
-You are my hero! Who would have thought that you would still be here after the
-first three parts? Your efforts will be well rewarded soon. The first three
-parts didn't look too deeply at the architecture of the framework. Because it
-makes Symfony2 stand apart from the framework crowd, let's dive into the
-architecture now.
+本篇将说明Symfony2的架构。
 
-Understanding the Directory Structure
--------------------------------------
+理解文件目录结构
+----------------
 
-The directory structure of a Symfony2 :term:`application` is rather flexible,
-but the directory structure of the *Standard Edition* distribution reflects
-the typical and recommended structure of a Symfony2 application:
+基于Symfony2的应用（\ :term:`application`\ ），代码、配置、资源文件等的目录结构可以很灵活。\ *标准发行版*\ 里采用的是官方推荐的典型方案：
 
-* ``app/``:    The application configuration;
-* ``src/``:    The project's PHP code;
-* ``vendor/``: The third-party dependencies;
-* ``web/``:    The web root directory.
+* ``app/``:    应用的配置文件；
+* ``src/``:    项目的PHP代码；
+* ``vendor/``: 第三方代码；
+* ``web/``:    站点根目录。
 
-The ``web/`` Directory
-~~~~~~~~~~~~~~~~~~~~~~
+``web/``\ 目录
+~~~~~~~~~~~~~~
 
-The web root directory is the home of all public and static files like images,
-stylesheets, and JavaScript files. It is also where each :term:`front controller`
-lives::
+站点根目录里放的是图片、样式表和Javscript这一类可以公开访问的静态文件。此外，前端控制器（\ :term:`front controller`\ ）也位于这个目录里：
+
+.. code-block:: php
 
     // web/app.php
     require_once __DIR__.'/../app/bootstrap.php.cache';
@@ -36,29 +30,26 @@ lives::
     $kernel->loadClassCache();
     $kernel->handle(Request::createFromGlobals())->send();
 
-The kernel first requires the ``bootstrap.php.cache`` file, which bootstraps
-the framework and registers the autoloader (see below).
+可以看到，框架的核心代码首先引用了\ ``bootstrap.php.cache``\ 文件，对框架的各组件进行预加载，并注册autoloader。
 
-Like any front controller, ``app.php`` uses a Kernel Class, ``AppKernel``, to
-bootstrap the application.
+与其他的入口文件一样，\ ``app.php``\ 使用一个Kernel Class（\ ``AppKernel``\ ）来初始化整个程序。
 
 .. _the-app-dir:
 
-The ``app/`` Directory
-~~~~~~~~~~~~~~~~~~~~~~
+``app/``\ 目录
+~~~~~~~~~~~~~~
 
-The ``AppKernel`` class is the main entry point of the application
-configuration and as such, it is stored in the ``app/`` directory.
+``AppKernel``\ 类是项目配置的起始文件，位于\ ``app/``\ 目录。
 
-This class must implement two methods:
+这个类必须实现两个方法：
 
-* ``registerBundles()`` must return an array of all bundles needed to run the
-  application;
+* ``registerBundles()`` 返回项目用到的代码包；
 
-* ``registerContainerConfiguration()`` loads the application configuration
-  (more on this later).
+* ``registerContainerConfiguration()`` 加载项目的配置信息。
 
-PHP autoloading can be configured via ``app/autoload.php``::
+PHP的自动加载可以通过\ ``app/autoload.php``\ 来配置：
+
+.. code-block:: php
 
     // app/autoload.php
     use Symfony\Component\ClassLoader\UniversalClassLoader;
@@ -87,40 +78,25 @@ PHP autoloading can be configured via ``app/autoload.php``::
     ));
     $loader->register();
 
-The :class:`Symfony\\Component\\ClassLoader\\UniversalClassLoader` is used to
-autoload files that respect either the technical interoperability `standards`_
-for PHP 5.3 namespaces or the PEAR naming `convention`_ for classes. As you
-can see here, all dependencies are stored under the ``vendor/`` directory, but
-this is just a convention. You can store them wherever you want, globally on
-your server or locally in your projects.
+如果PHP文件名和类名符合\ `PHP5.3命名空间规范`_\ （standards），或者符合\ `PEAR类命名范例`_\ （convention），就可以由\ :class:`Symfony\\Component\\ClassLoader\\UniversalClassLoader`\ 实现自动加载。例子里的第三方依赖都位于\ ``vendor/``\ 目录directory, 但这只是一个推荐的做法，实际上，如果配置正确，你可以把文件放在任何的位置。
 
 .. note::
 
-    If you want to learn more about the flexibility of the Symfony2
-    autoloader, read the ":doc:`/components/class_loader`" chapter.
+    如果你想了解更多关于Symfony2自动加载的细节，可以阅读《\ ":doc:`/components/class_loader`"\ 》。
 
-Understanding the Bundle System
--------------------------------
+理解代码包体系
+--------------
 
-This section introduces one of the greatest and most powerful features of
-Symfony2, the :term:`bundle` system.
+接下来介绍的是Symfony2里最有特色、也最强大的设计：代码包（\ :term:`bundle`\ ）。
 
-A bundle is kind of like a plugin in other software. So why is it called a
-*bundle* and not a *plugin*? This is because *everything* is a bundle in
-Symfony2, from the core framework features to the code you write for your
-application. Bundles are first-class citizens in Symfony2. This gives you
-the flexibility to use pre-built features packaged in third-party bundles
-or to distribute your own bundles. It makes it easy to pick and choose which
-features to enable in your application and optimize them the way you want.
-And at the end of the day, your application code is just as *important* as
-the core framework itself.
+代码包有点类似其他软件系统里的“插件”。那为什么要称之为\ *代码包*\ ，而不是\ *插件*\ 呢？这是因为，Symfony2里\ *所有的*\ 组成部分，不管是你自己写的代码，还是核心的框架功能都是以代码包的形式存在的。代码包在Symfony2里是“有本地户口的”（意译）。你可以非常方便的引入第三方的代码，或者向其他开发者或者开源社区发布你自己的代码包。你可以指定要启用哪些功能，并进行必要的优化。Symfony2将你的代码和框架代码视作同等重要。
 
-Registering a Bundle
-~~~~~~~~~~~~~~~~~~~~
+注册代码包
+~~~~~~~~~~
 
-An application is made up of bundles as defined in the ``registerBundles()``
-method of the ``AppKernel`` class. Each bundle is a directory that contains
-a single ``Bundle`` class that describes it::
+每个应用都是由在\ ``AppKernel``\ 类的\ ``registerBundles()``\ 方法里声明的代码包组成的。每一个代码包都包含了一个描述性的\ ``Bundle``\ 类：
+
+.. code-block:: php
 
     // app/AppKernel.php
     public function registerBundles()
@@ -147,16 +123,12 @@ a single ``Bundle`` class that describes it::
         return $bundles;
     }
 
-In addition to the ``AcmeDemoBundle`` that we have already talked about, notice
-that the kernel also enables other bundles such as the ``FrameworkBundle``,
-``DoctrineBundle``, ``SwiftmailerBundle``, and ``AsseticBundle`` bundle.
-They are all part of the core framework.
+除了我们已经多次提到的\ ``AcmeDemoBundle``\ ，可以看到框架还启用了很多其他的代码包，如\ ``FrameworkBundle``\ ，\ ``DoctrineBundle``\ ，\ ``SwiftmailerBundle``\ ，\ ``AsseticBundle``\ 等等，他们都是框架的核心组成部分。
 
-Configuring a Bundle
-~~~~~~~~~~~~~~~~~~~~
+配置代码包
+~~~~~~~~~~
 
-Each bundle can be customized via configuration files written in YAML, XML, or
-PHP. Have a look at the default configuration:
+代码包可以通过YAML，XML，或PHP代码格式的配置文件进行配置，下面是框架的默认配置：
 
 .. code-block:: yaml
 
@@ -218,14 +190,9 @@ PHP. Have a look at the default configuration:
         secure_controllers:  true
         secure_all_services: false
 
-Each entry like ``framework`` defines the configuration for a specific bundle.
-For example, ``framework`` configures the ``FrameworkBundle`` while ``swiftmailer``
-configures the ``SwiftmailerBundle``.
+每一个类似\ ``framework``\ 的键值对应的都是某一个具体代码包的配置。比如，\ ``framework``\ 配置的是\ ``FrameworkBundle``\ ，而\ ``swiftmailer``\ 配置的是\ ``SwiftmailerBundle``\ 。
 
-Each :term:`environment` can override the default configuration by providing a
-specific configuration file. For example, the ``dev`` environment loads the
-``config_dev.yml`` file, which loads the main configuration (i.e. ``config.yml``)
-and then modifies it to add some debugging tools:
+每一个运行环境（\ :term:`environment`\ ）的默认配置都可以被覆盖。比如，\ ``dev``\ 环境所加载的\ ``config_dev.yml``\ 文件，即是对主配置（\ ``config.yml``\ ）的一个扩展，其启用了一些调试的工具：
 
 .. code-block:: yaml
 
@@ -254,113 +221,70 @@ and then modifies it to add some debugging tools:
     assetic:
         use_controller: true
 
-Extending a Bundle
-~~~~~~~~~~~~~~~~~~
+扩展代码包的功能
+~~~~~~~~~~~~~~~~
 
-In addition to being a nice way to organize and configure your code, a bundle
-can extend another bundle. Bundle inheritance allows you to override any existing
-bundle in order to customize its controllers, templates, or any of its files.
-This is where the logical names (e.g. ``@AcmeDemoBundle/Controller/SecuredController.php``)
-come in handy: they abstract where the resource is actually stored.
+除了可以对代码进行组织、管理相关的配置，代码包还可以被扩展，从而具备你所需要的功能。代码包的继承特性允许你对任何代码包进行重新定义，如控制器或者模板。这正是逻辑代称适用的场合（如\ ``@AcmeDemoBundle/Controller/SecuredController.php``\ ），因为代称可以避免将代码的路径信息写死。
 
-Logical File Names
-..................
+文件名的代称
+............
 
-When you want to reference a file from a bundle, use this notation:
-``@BUNDLE_NAME/path/to/file``; Symfony2 will resolve ``@BUNDLE_NAME``
-to the real path to the bundle. For instance, the logical path
-``@AcmeDemoBundle/Controller/DemoController.php`` would be converted to
-``src/Acme/DemoBundle/Controller/DemoController.php``, because Symfony knows
-the location of the ``AcmeDemoBundle``.
+当你需要引用代码包里的某一个文件，你可以使用类似这样的格式：\ ``@代码包名称/目录1/目录2/文件名``\ ，Symfony2将把\ ``@代码包``\ 解析成实际的路径。举例来说，由于Symfony2框架知道\ ``AcmeDemoBundle``\ 所在的位置，\ ``@AcmeDemoBundle/Controller/DemoController.php``\ 将会被正确地解析成\ ``src/Acme/DemoBundle/Controller/DemoController.php``\ 。
 
-Logical Controller Names
-........................
+控制器的代称
+............
 
-For controllers, you need to reference method names using the format
-``BUNDLE_NAME:CONTROLLER_NAME:ACTION_NAME``. For instance,
-``AcmeDemoBundle:Welcome:index`` maps to the ``indexAction`` method from the
-``Acme\DemoBundle\Controller\WelcomeController`` class.
+控制器代称的格式是：``代码包名称:控制器:动作方法``\ 。例如，\ ``AcmeDemoBundle:Welcome:index``\ 指向的是\ ``Acme\DemoBundle\Controller\WelcomeController``\ 类的\ ``indexAction`` 方法。
 
-Logical Template Names
-......................
+模板的代称
+..........
 
-For templates, the logical name ``AcmeDemoBundle:Welcome:index.html.twig`` is
-converted to the file path ``src/Acme/DemoBundle/Resources/views/Welcome/index.html.twig``.
-Templates become even more interesting when you realize they don't need to be
-stored on the filesystem. You can easily store them in a database table for
-instance.
+对于模板的代称，如\ ``AcmeDemoBundle:Welcome:index.html.twig``\ 将被转化为实际的文件路径：\ ``src/Acme/DemoBundle/Resources/views/Welcome/index.html.twig``\ 。模板还可以有别的更有意思的实现方式，比如，可以保存在数据库里，而不是存成文件。
 
-Extending Bundles
-.................
+扩展代码包
+..........
 
-If you follow these conventions, then you can use :doc:`bundle inheritance</cookbook/bundles/inheritance>`
-to "override" files, controllers or templates. For example, you can create
-a bundle - ``AcmeNewBundle`` - and specify that its parent is ``AcmeDemoBundle``.
-When Symfony loads the ``AcmeDemoBundle:Welcome:index`` controller, it will
-first look for the ``WelcomeController`` class in ``AcmeNewBundle`` and then
-look inside ``AcmeDemoBundle``. This means that one bundle can override almost
-any part of another bundle!
+如果你的代码遵循了以上的格式，那么你就可以使用代码包的继承（\ :doc:`bundle inheritance</cookbook/bundles/inheritance>`\ ）了，对任何一个文件、控制器或者模板进行重载。例如，你可以创建一个名为\ ``AcmeNewBundle``\ 的代码包，并指明其所继承对象是\ ``AcmeDemoBundle``\ 。当Symfony加载\ ``AcmeDemoBundle:Welcome:index``\ 控制器时，框架首先将在\ ``AcmeNewBundle``\ 所在路径里寻找\ ``WelcomeController``\ 控制器类。所以，在Symfony2里，代码包里几乎任何部分都可以被继承、重载。
 
-Do you understand now why Symfony2 is so flexible? Share your bundles between
-applications, store them locally or globally, your choice.
+通过使用Symfony2，在你的多个项目之间重用代码变得很容易了，对吧？
 
 .. _using-vendors:
 
-Using Vendors
--------------
+引入第三方代码
+--------------
 
-Odds are that your application will depend on third-party libraries. Those
-should be stored in the ``vendor/`` directory. This directory already contains
-the Symfony2 libraries, the SwiftMailer library, the Doctrine ORM, the Twig
-templating system, and some other third party libraries and bundles.
+大多数情况，你的项目都会需要用到一些第三方的代码。这些代码应该被保存在\ ``vendor/``\ 目录里。在这个目录里你可以找到诸如：Symfony2、SwiftMailer、Doctrine ORM、Twig模板引擎等等组件。
 
-Understanding the Cache and Logs
---------------------------------
+理解缓存和日志
+--------------
 
-Symfony2 is probably one of the fastest full-stack frameworks around. But how
-can it be so fast if it parses and interprets tens of YAML and XML files for
-each request? The speed is partly due to its cache system. The application
-configuration is only parsed for the very first request and then compiled down
-to plain PHP code stored in the ``app/cache/`` directory. In the development
-environment, Symfony2 is smart enough to flush the cache when you change a
-file. But in the production environment, it is your responsibility to clear
-the cache when you update your code or change its configuration.
+Symfony2有可能是速度最快的全功能框架之一。但如果框架需要处理大量的YAML和XML文件，又是怎么保证运行速度的？这就归功于缓存系统了。由于应用程序的配置文件相对固定，所以Symfony2只在第一次处理请求时对各类配置文件进行转换，并在\ ``app/cache/``\ 目录里保存为纯PHP代码的格式。在开发环境下使用时，Symfony2会有判断地自动更新配置文件的缓存。在生产环境里，配置的更新则需要你手工来进行。
 
-When developing a web application, things can go wrong in many ways. The log
-files in the ``app/logs/`` directory tell you everything about the requests
-and help you fix the problem quickly.
+开发Web应用可能遇到各种各样的问题，\ ``app/logs/``\ 目录里的日志文件将会记录框架对请求进行处理的细节，为你解决问题提供依据。
 
-Using the Command Line Interface
---------------------------------
+使用命令行工具
+--------------
 
-Each application comes with a command line interface tool (``app/console``)
-that helps you maintain your application. It provides commands that boost your
-productivity by automating tedious and repetitive tasks.
+你可以通过命令行工具(\ ``app/console``\ ）来管理你的应用。这样就避免了在一些重复的、麻烦的工作上浪费时间。
 
-Run it without any arguments to learn more about its capabilities:
+你可以直接运行这个命令来查看说明：
 
 .. code-block:: bash
 
     php app/console
 
-The ``--help`` option helps you discover the usage of a command:
+或者通过\ ``--help``\ 选项来查看具体命令的帮助信息：
 
 .. code-block:: bash
 
     php app/console router:debug --help
 
-Final Thoughts
---------------
+结论
+----
 
-Call me crazy, but after reading this part, you should be comfortable with
-moving things around and making Symfony2 work for you. Everything in Symfony2
-is designed to get out of your way. So, feel free to rename and move directories
-around as you see fit.
+Symfony2的设计目标之一就是为你提供“自由度”，诸如改变文件路径、管理配置、对复杂架构的日常维护等等。所以，当你认为有必要，你完全可以对Symfony2框架进行改造。
 
-And that's all for the quick tour. From testing to sending emails, you still
-need to learn a lot to become a Symfony2 master. Ready to dig into these
-topics now? Look no further - go to the official :doc:`/book/index` and pick
-any topic you want.
+本篇是快速入门的最后一篇，你还可以在不同的专题教程里了解如何成为一个Symfony2的专家。访问地址是：《\ :doc:`/book/index`\ 》。
 
-.. _standards:  http://symfony.com/PSR0
-.. _convention: http://pear.php.net/
+.. _PHP5.3命名空间规范: http://symfony.com/PSR0
+.. _PEAR类命名范例: http://pear.php.net/
